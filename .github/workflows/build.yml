@@ -21,6 +21,10 @@ jobs:
     - name: Checkout source code
       uses: actions/checkout@v3
 
+    - name: runs get-source.sh
+    - run: cd Dependencies/libimobiledevice-vs
+    - run: ./get-source.sh
+
     - name: Set up MSBuild
       uses: microsoft/setup-msbuild@v1.1
 
