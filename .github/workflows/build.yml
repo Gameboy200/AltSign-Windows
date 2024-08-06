@@ -21,13 +21,13 @@ jobs:
     - name: Checkout source code
       uses: actions/checkout@v3
 
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+
     - name: runs get-source.cmd
       run: | 
         cd Dependencies/libimobiledevice-vs
         ./get-source.cmd
-
-    - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v1.1
 
     - name: Build solution
       run: msbuild AltSign.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
