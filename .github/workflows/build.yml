@@ -35,7 +35,7 @@ jobs:
         ls
 
     - name: Build solution
-      run: msbuild AltSign.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }
+      run: msbuild AltSign.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
