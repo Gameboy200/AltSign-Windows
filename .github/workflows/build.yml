@@ -31,7 +31,7 @@ jobs:
       run: | 
         cd Dependencies/libimobiledevice-vs
         ./get-source.cmd
-        cd "c:\vcpkg"
+        cd "c:\vcpkg"; ./bootstrap-vcpkg.bat; vcpkg integrate install
         ls
 
     - name: Build solution
