@@ -31,7 +31,7 @@ jobs:
       run: | 
         cd Dependencies/libimobiledevice-vs
         ./get-source.cmd
-        cd /
+        cd "c:\vcpkg"
         ls
 
     - name: Build solution
