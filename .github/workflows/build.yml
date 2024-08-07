@@ -31,6 +31,8 @@ jobs:
       run: | 
         cd Dependencies/libimobiledevice-vs
         ./get-source.cmd
+        cd ..
+        cd ..
         ls
 
     - name: Build solution
