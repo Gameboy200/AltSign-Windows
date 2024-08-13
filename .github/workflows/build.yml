@@ -26,7 +26,7 @@ jobs:
       run: |
         git clone --recursive https://github.com/SideStore/SideServer-Windows
         cd  SideServer-Windows
-        mv *
+        mv * ..
         cd ..
         ls
 
