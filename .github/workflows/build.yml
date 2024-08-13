@@ -1,44 +1,83 @@
-name: Build AltSign
+name: MSBuild
 
 on:
   push:
-    branches:
-      - develop
+    branches: [ "develop" ]
   pull_request:
-    branches:
-      - develop
+    branches: [ "develop" ]
+
+env:
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  PROJECT_FILE_PATH: AltServer.sln
+  BUILD_PLATFORM: x86
+  BUILD_CONFIGURATION: Release
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        configuration: [Debug, Release]
-        platform: [Win32, x64]
-
     steps:
-    - name: Checkout source code
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-    - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v1.1
+    - name: Checkout submodules
+      run: git clone --recursive https://github.com/SideStore/SideServer-Windows
 
+    - name: Add MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2 
+      
     - name: Setup VS Dev Environment
       uses: seanmiddleditch/gha-setup-vsdevenv@v4
+   
+    - name: Run get-source in Libimobiledevice-vs
+      run: cd Dependencies/libimobiledevice-vs; ./get-source.cmd
 
-    - name: runs get-source.cmd
-      run: | 
-        cd Dependencies/libimobiledevice-vs
-        ./get-source.cmd
-        cd "c:\vcpkg"; ./bootstrap-vcpkg.bat; vcpkg integrate install
-        ls
-
-    - name: Build solution
-      run: msbuild AltSign.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+    - name: Cache vcpkg dir
+      id: cache-vcpkg-dir
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-vcpkg-dir
       with:
-        name: ${{ matrix.configuration }}-${{ matrix.platform }}-build
-        path: ${{ matrix.platform }}/${{ matrix.configuration }}/
+        path: c:\vcpkg
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Intergrate vcpkg packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+     # run: cd "c:\vcpkg"; ./bootstrap-vcpkg.bat; vcpkg install --feature-flags=manifests,binarycaching,default-features,websockets --recurse openssl boost-regex:x64-windows dirent mdnsresponder winsparkle libiconv:x64-windows zlib:x64-windows; vcpkg integrate install
+      run: cd "c:\vcpkg"; ./bootstrap-vcpkg.bat; vcpkg integrate install
+
+    - name: Build Project
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=${{env.BUILD_PLATFORM}} /p:SolutionDir="${{github.workspace}}\\" ${{env.PROJECT_FILE_PATH}}
+
+    - name: Disable Out of Process Building
+      run: .\DisableOutOfProcBuild.exe
+      working-directory: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\VSI\DisableOutOfProcBuild
+
+    - name: Build .MSI
+      run: DevEnv AltInstaller/AltInstaller.vdproj /build Release; tree /f /a
+
+    - name: Upload ZIP Artifact
+      uses: actions/upload-artifact@v3.1.0
+      with:
+        name: SideServer (With Debug Symbols)
+        path: ${{github.workspace}}\Win32\Release
+
+    - name: Upload Installer Artifact
+      uses: actions/upload-artifact@v3.1.0
+      with:
+        name: SideServer Installer
+        path: ${{github.workspace}}\AltInstaller\Release
+
+    - name: Upload full build
+      uses: actions/upload-artifact@v3.1.0
+      with:
+        name: Full build
+        path: ${{github.workspace}}
