@@ -23,7 +23,12 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Checkout submodules
-      run: git clone --recursive https://github.com/SideStore/SideServer-Windows
+      run: |
+        git clone --recursive https://github.com/SideStore/SideServer-Windows
+        cd  SideServer-Windows
+        mv *
+        cd ..
+        ls
 
     - name: Add MSBuild
       uses: microsoft/setup-msbuild@v1.0.2 
